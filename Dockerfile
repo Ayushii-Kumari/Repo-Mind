@@ -19,7 +19,7 @@ COPY pyproject.toml .
 COPY . .
 
 # Install Python deps (--system = no venv needed inside Docker)
-RUN uv sync --system
+RUN uv sync
 
 # Copy built React files from stage 1
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
