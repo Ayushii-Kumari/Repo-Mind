@@ -6,11 +6,13 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // Forward /api/* straight to FastAPI — no path rewrite needed
+      // because FastAPI now serves all routes under /api/* natively.
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
 })
+

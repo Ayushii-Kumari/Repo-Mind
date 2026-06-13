@@ -1,10 +1,12 @@
 """
 FastAPI backend for the GitHub Repository Explainer.
-Exposes endpoints consumed by the Streamlit frontend.
+All API endpoints are mounted under /api so the React frontend
+can reach them both in dev (via Vite proxy) and in production
+(served as a single service from FastAPI).
 """
 import os
 import json
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -28,6 +30,9 @@ app.add_middleware(
 # In-memory session store (for demo; use Redis in production)
 _sessions: dict[str, dict] = {}
 
+# All API routes live under /api so the same paths work in dev and prod.
+api = APIRouter(prefix="/api")
+
 
 class AnalyzeRequest(BaseModel):
     repo_url: str
@@ -43,12 +48,12 @@ class ExplainFileRequest(BaseModel):
     file_path: str
 
 
-@app.get("/")
-def root():
-    return {"status": "ok", "message": "RepoMind API is running 🚀"}
+@api.get("/health")
+def health():
+    return {"status": "healthy", "sessions": len(_sessions)}
 
 
-@app.post("/analyze")
+@api.post("/analyze")
 def analyze_repo(req: AnalyzeRequest):
     """
     Run the full 5-agent pipeline on a GitHub repo.
@@ -84,10 +89,11 @@ def analyze_repo(req: AnalyzeRequest):
     }
 
 
-@app.post("/chat")
+@api.post("/chat")
 def chat_with_repo(req: ChatRequest):
     """
-    RAG-based Q&A about the repo. Requires /analyze to have been called first.
+    Streaming RAG-based Q&A about the repo.
+    Requires /api/analyze to have been called first.
     """
     from agents.diagram_agent import chat_agent_stream
 
@@ -95,7 +101,7 @@ def chat_with_repo(req: ChatRequest):
     if not state:
         raise HTTPException(
             status_code=404,
-            detail="Repo not analyzed yet. Call /analyze first.",
+            detail="Repo not analyzed yet. Call /api/analyze first.",
         )
 
     try:
@@ -105,7 +111,7 @@ def chat_with_repo(req: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/explain-file")
+@api.post("/explain-file")
 def explain_file(req: ExplainFileRequest):
     """
     Explain a specific file in the repo.
@@ -152,6 +158,19 @@ Provide:
     return {"explanation": resp.choices[0].message.content.strip()}
 
 
-@app.get("/health")
-def health():
-    return {"status": "healthy", "sessions": len(_sessions)}
+# Register all /api/* routes
+app.include_router(api)
+
+
+# ---------------------------------------------------------------------------
+# Serve the React production build (frontend/dist) when it exists.
+# In development the Vite dev server handles the frontend separately.
+# On Render the build step runs: cd frontend && npm install && npm run build
+# which creates frontend/dist/ — FastAPI then serves it at "/".
+# API routes (/api/*) are registered BEFORE this mount, so they take priority.
+# ---------------------------------------------------------------------------
+from fastapi.staticfiles import StaticFiles
+
+_dist = os.path.join(os.path.dirname(__file__), "../frontend/dist")
+if os.path.exists(_dist):
+    app.mount("/", StaticFiles(directory=_dist, html=True), name="frontend")
