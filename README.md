@@ -14,9 +14,7 @@ Run locally:
 docker run -p 8000:8000 ayushiikumari/repo-mind:latest
 ```
 
-Docker Hub:
-
-https://hub.docker.com/r/ayushiikumari/repo-mind
+Docker Hub: https://hub.docker.com/r/ayushiikumari/repo-mind
 
 
 React + FastAPI + Groq + LangGraph + FAISS. 
