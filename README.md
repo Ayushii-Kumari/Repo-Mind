@@ -1,6 +1,8 @@
 # 🧠 RepoMind — GitHub Repository Explainer
 
-React + FastAPI + Groq + LangGraph + FAISS. No Streamlit.
+🚀 Live Demo: https://repo-mind-tnpt.onrender.com
+
+React + FastAPI + Groq + LangGraph + FAISS. 
 
 ## Stack
 
@@ -96,16 +98,63 @@ repo-explainer/
 
 ## Deploy
 
-**Frontend → Vercel:**
+### Single Deployment → Render (Frontend + Backend)
+
+RepoMind serves both React and FastAPI from one Render service.
+
+#### 1. Connect GitHub repository
+
+Import the project into Render.
+
+#### 2. Build Command
+
 ```bash
-cd frontend
-npm run build
-# Push to GitHub → import in vercel.com
-# Set env var: VITE_API_URL=https://your-backend.onrender.com
+pip install uv && uv sync && cd frontend && npm install && npm run build
 ```
 
-**Backend → Render:**
-- Connect GitHub repo
-- Build command: `pip install uv && uv sync`
-- Start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-- Add env vars: `GROQ_API_KEY`, `GITHUB_TOKEN`
+#### 3. Start Command
+
+```bash
+uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+```
+
+#### 4. Environment Variables
+
+```env
+GROQ_API_KEY=your_key
+GITHUB_TOKEN=optional
+```
+
+#### 5. Serve React using FastAPI
+
+Add this at the end of `backend/main.py`:
+
+```python
+from fastapi.staticfiles import StaticFiles
+import os
+
+dist_path = os.path.join(
+    os.path.dirname(__file__),
+    "../frontend/dist"
+)
+
+if os.path.exists(dist_path):
+    app.mount(
+        "/",
+        StaticFiles(
+            directory=dist_path,
+            html=True
+        ),
+        name="frontend"
+    )
+```
+
+#### 6. Deploy
+
+Render URL:
+
+```
+https://repo-mind-tnpt.onrender.com
+```
+
+Open the URL to access the complete application.
