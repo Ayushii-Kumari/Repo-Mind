@@ -1,4 +1,4 @@
-# 🧠 RepoMind v2 — GitHub Repository Explainer
+# 🧠 RepoMind — GitHub Repository Explainer
 
 React + FastAPI + Groq + LangGraph + FAISS. No Streamlit.
 
@@ -22,7 +22,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### 2. Clone and enter project
 ```bash
-cd repo-explainer
+cd repo-mind
 ```
 
 ### 3. Add your API key
