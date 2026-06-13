@@ -1,19 +1,31 @@
-FROM python:3.11-slim
+# Stage 1: Build React frontend 
+FROM node:20-slim AS frontend-build
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+# Output is now in /app/frontend/dist
 
+# Stage 2: Python backend 
+FROM python:3.11-slim
 WORKDIR /app
 
 # Install uv
 RUN pip install uv
 
-# Copy project files
+# Copy Python project files
 COPY pyproject.toml .
 COPY . .
 
-# Install dependencies
-RUN uv sync --no-dev
+# Install Python deps (--system = no venv needed inside Docker)
+RUN uv sync --system
 
-# Expose ports
-EXPOSE 8000 8501
+# Copy built React files from stage 1
+COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-# Run both services
-CMD ["uv", "run", "app.py"]
+# Expose Render port
+EXPOSE 10000
+
+# Start FastAPI
+CMD ["uv", "run", "--system", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "10000"]
