@@ -5,16 +5,19 @@
 🐳 Docker Image
 
 Pull image:
-
+```bash
 docker pull ayushiikumari/repo-mind:latest
+```
 
 Run locally:
-
+```bash
 docker run -p 8000:8000 ayushiikumari/repo-mind:latest
+```
 
 Docker Hub:
 
 https://hub.docker.com/r/ayushiikumari/repo-mind
+
 
 React + FastAPI + Groq + LangGraph + FAISS. 
 
